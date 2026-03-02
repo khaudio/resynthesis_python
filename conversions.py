@@ -70,15 +70,15 @@ def linear_to_log_freq_value(lin_val, sampleRate, margin=epsilon):
     return (np.log2(freq) - np.log2(minFreq)) / 15.0
 
 
-def snap_frequency(freq, sampleRate):
+def quantize_frequency(freq, sampleRate):
     '''
-    Snap frequency to nearest bin estimate
+    Quantize frequency to nearest bin estimate
     '''
     step = sampleRate / (2 ** 16)
     return round((freq / (step))) * step
 
 
-def log_to_linear_freq_value(logValue, sampleRate, snap=False, margin=epsilon):
+def log_to_linear_freq_value(logValue, sampleRate, quantize=False, margin=epsilon):
     '''
     Convert log value to linear value,
     expressed as amplitude in spectra.
@@ -90,8 +90,8 @@ def log_to_linear_freq_value(logValue, sampleRate, snap=False, margin=epsilon):
     nyquist = (sampleRate * 0.5)
     if freq <= minFreq + margin:
         return 0.0
-    elif snap:
-        return snap_frequency(freq, sampleRate) / nyquist
+    elif quantize:
+        return quantize_frequency(freq, sampleRate) / nyquist
     else:
         return freq / nyquist
 

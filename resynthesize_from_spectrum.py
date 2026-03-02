@@ -17,8 +17,8 @@ logSpectrum = False
 # Number of partials must match the input spectrum
 numPartials = 128
 
-# Snap to frequency bin estimates
-snap = False
+# Quantize to frequency bin estimates
+quantize = False
 
 # Input data sample rate, as determined by how the spectrum was captured
 inputSampleRate = 48000
@@ -34,7 +34,7 @@ oscBank = OscillatorBank(sampleRate=outputSampleRate, numOscillators=numPartials
 for amp, freq in zip(amps, freqs):
     oscBank.oscillators[partialIndex].amplitude = amp
     oscBank.oscillators[partialIndex].frequency = convert_lin_float_to_freq(
-            value=(log_to_linear_freq_value(freq, inputSampleRate, snap=snap) if logSpectrum else freq),
+            value=(log_to_linear_freq_value(freq, inputSampleRate, quantize=quantize) if logSpectrum else freq),
             sampleRate=inputSampleRate
         )
     outputBuff = np.append(outputBuff, oscBank.get_osc_sum(1))
