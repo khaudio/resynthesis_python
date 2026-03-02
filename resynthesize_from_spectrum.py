@@ -13,7 +13,12 @@ outFilename = f'{directory}/Kyma_dx_demo_001_LinSpect_48000_24_s128_71040_frames
 
 # Set to True if spectrum file is log, False for linear spectrum
 logSpectrum = False
+
+# Number of partials must match the input spectrum
 numPartials = 128
+
+# Snap to frequency bin estimates
+snap = False
 
 # Input data sample rate, as determined by how the spectra was captured
 inputSampleRate = 48000
@@ -29,7 +34,7 @@ oscBank = OscillatorBank(sampleRate=outputSampleRate, numOscillators=numPartials
 for amp, freq in zip(amps, freqs):
     oscBank.oscillators[partialIndex].amplitude = amp
     oscBank.oscillators[partialIndex].frequency = convert_lin_float_to_freq(
-            value=(linear_to_log_freq_value(freq, inputSampleRate) if logSpectrum else freq),
+            value=(log_to_linear_freq_value(freq, inputSampleRate, snap=snap) if logSpectrum else freq),
             sampleRate=inputSampleRate
         )
     outputBuff = np.append(outputBuff, oscBank.get_osc_sum(1))
