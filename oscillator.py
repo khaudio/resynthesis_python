@@ -7,13 +7,14 @@ import numpy as np
 tau = (2 * np.pi)
 
 class Oscillator:
-    def __init__( self, samplerate, frequency, amplitude=1.0, radians=0.0):
+    def __init__( self, samplerate, frequency, amplitude=1.0, radians=0.0, allowDC=False):
         self.__frequency = 0.0
         self.__amplitude = 1.0
         self.sampleRate = samplerate
         self.frequency = frequency
         self.amplitude = amplitude
         self.radians = radians
+        self.allowDC = allowDC
 
     @property
     def amplitude(self):
@@ -44,7 +45,9 @@ class Oscillator:
         self.increment = tau * self.__frequency / self.sampleRate
 
     def __call__(self, numSamples):
-        '''Returns a numpy array of samples'''
+        '''Returns an array of samples'''
+        if not self.allowDC and self.frequency == 0.0:
+            return np.zeros(numSamples)
         n = np.arange(numSamples)
         samples = (self.amplitude * np.sin(self.radians + n * self.increment))
         self.radians += (self.increment * numSamples)
