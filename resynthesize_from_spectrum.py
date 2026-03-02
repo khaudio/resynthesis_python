@@ -20,7 +20,7 @@ numPartials = 128
 # Snap to frequency bin estimates
 snap = False
 
-# Input data sample rate, as determined by how the spectra was captured
+# Input data sample rate, as determined by how the spectrum was captured
 inputSampleRate = 48000
 
 # Output sample rate to resynthesize
