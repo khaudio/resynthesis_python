@@ -3,7 +3,7 @@
 from sum_of_sines import *
 from conversions import *
 
-directory = './Kyma Dx Demo'
+directory = '.example_data/Kyma Dx Demo'
 inFileBasenameAmps = 'Kyma_dx_demo_001_LinSpect_48000_24_s128_71040_frames_amps'
 inFileBasenameFreqs = 'Kyma_dx_demo_001_LinSpect_48000_24_s128_71040_frames_freqs'
 inFileExtension = 'aif'
