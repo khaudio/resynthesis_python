@@ -4,10 +4,23 @@ import numpy as np
 import soundfile as sf
 
 
-maxBinIndex = np.power(2, 16)
-octaveRange = np.log2(maxBinIndex) - 1.0
+# maxBinIndex = np.power(2, 16)
+# octaveRange = np.log2(maxBinIndex)
+# logScale = np.float64(1.0 / (np.log2(maxBinIndex) - 1.0))
+
+
+fftSize = np.power(2, 16)
+nyquistBin = fftSize // 2
+octaveRange = np.log2(nyquistBin)
 logScale = np.float64(1.0 / octaveRange)
+
+
 epsilon = np.float64(1e-15)
+
+
+# maxBinIndex = 65536
+# octaveRange = 16.0
+# logScale = 1.0 / 15.0
 
 
 def scale_gain_2_13(value):
@@ -83,17 +96,14 @@ def decibels_to_amplitude(decibels):
 
 
 def linear_freq_scalar_to_log(linearValue):
-    if linearValue <= 0:
-        return 0
-    return (logScale * np.log2(linearValue * maxBinIndex))
+    linearValue = max(linearValue, 0.0)
+    return (logScale * np.log2(linearValue * nyquistBin)) if linearValue else 0
 
 
 def log_freq_scalar_to_linear(logValue, quantize=False):
-    binIndex = np.power(2.0, 15.0 * logValue)
+    binIndex = np.power(2.0, (logValue * octaveRange))
     binIndex = round(binIndex) if quantize else binIndex
-    if (binIndex < 1) or (logValue <= 0):
-        return 0
-    return binIndex / maxBinIndex
+    return (binIndex / nyquistBin) if binIndex >= 1 else 0
 
 
 def get_frequency_from_linear_scalar(linearValue, sampleRate):
@@ -111,11 +121,11 @@ def get_frequency_from_log_scalar(logValue, sampleRate, quantize=False):
     
     quantize rounds the frequency to the nearest bin
     '''
-    binIndex = np.power(2, (logValue / logScale))
+    binIndex = np.power(2.0, (logValue * octaveRange))
     binIndex = round(binIndex) if quantize else binIndex
-    if (binIndex < 1) or (logValue <= 0):
+    if (binIndex < 1):
         return 0
-    return binIndex * (sampleRate / maxBinIndex)
+    return binIndex * (sampleRate / fftSize)
 
 
 def get_spectral_data_from_st_file(filename):

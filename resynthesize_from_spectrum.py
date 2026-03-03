@@ -14,6 +14,12 @@ outFilename = f'{directory}/Kyma_dx_demo_001_LogSpect_48000_24_s128_71040_frames
 # Set to True if spectrum file is log, False for linear spectrum
 logSpectrum = True
 
+# Set logScale to adjust pitch
+logScale = 1.0
+
+# Set linearScale to adjust frequency offset
+linearScale = 1.0
+
 # Number of partials must match the input spectrum
 numPartials = 128
 
@@ -36,13 +42,23 @@ partialIndex = 0
 oscBank = OscillatorBank(sampleRate=outputSampleRate, numOscillators=numPartials, allowDC=False)
 for ampScalar, freqScalar in zip(amps, freqs):
     oscBank.oscillators[partialIndex].amplitude = ampScalar
-    oscBank.oscillators[partialIndex].frequency = (
-            get_frequency_from_log_scalar(freqScalar, inputSampleRate, quantize=quantize)
-            if logSpectrum
-            else get_frequency_from_linear_scalar(freqScalar, inputSampleRate)
-        )
+
+    # Pitch scale
+    if logSpectrum:
+        freqScalar *= logScale
+    else:
+        freqScalar = linear_freq_scalar_to_log(freqScalar) * logScale
+
+    # Frequency offset
+    freqScalar = log_freq_scalar_to_linear(freqScalar, quantize=quantize) * linearScale
+
+    # Set osc frequency with linearized frequency scalar
+    oscBank.oscillators[partialIndex].frequency = get_frequency_from_linear_scalar(freqScalar, inputSampleRate)
+
     outputBuff = np.append(outputBuff, oscBank.get_osc_sum(1))
     partialIndex = increment_partial_index(partialIndex, numPartials)
+
+print(f'Writing file...')
 sf.write(outFilename, outputBuff, outputSampleRate, format='aiff', subtype="FLOAT")
 
 print(f'{len(outputBuff)} samples writen to {outFilename}')
