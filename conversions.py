@@ -4,23 +4,12 @@ import numpy as np
 import soundfile as sf
 
 
-# maxBinIndex = np.power(2, 16)
-# octaveRange = np.log2(maxBinIndex)
-# logScale = np.float64(1.0 / (np.log2(maxBinIndex) - 1.0))
-
-
 fftSize = np.power(2, 16)
 nyquistBin = fftSize // 2
 octaveRange = np.log2(nyquistBin)
 logScale = np.float64(1.0 / octaveRange)
-
-
+ampExpBase = np.exp(np.e, np.e)
 epsilon = np.float64(1e-15)
-
-
-# maxBinIndex = 65536
-# octaveRange = 16.0
-# logScale = 1.0 / 15.0
 
 
 def scale_gain_2_13(value):
@@ -63,38 +52,6 @@ def decibels_to_amplitude(decibels):
     return np.power(10.0, decibels / 20.0)
 
 
-# def minimum_freq(sampleRate):
-#     return sampleRate / (2 ** 16)
-
-
-# def linear_to_log_freq_value(value: np.float64, sampleRate, margin=epsilon):
-#     '''
-#     Convert linear frequency coefficient expressed as amplitude to log
-#     '''
-#     freq = value * (sampleRate * 0.5)
-#     minFreq = minimum_freq(sampleRate)
-#     freq = np.maximum(freq, minFreq)
-#     if freq <= minFreq + margin:
-#         return 0.0
-#     return (np.log2(freq) - np.log2(minFreq)) / 15.0
-
-
-# def log_to_linear_freq_value(value: np.float64, sampleRate, quantize=False, margin=epsilon):
-#     '''
-#     Convert log frequency coefficient expressed as amplitude to linear
-#     '''
-#     minFreq = minimum_freq(sampleRate)
-#     freq = minFreq * (2.0 ** (15.0 * value))
-#     nyquist = (sampleRate * 0.5)
-#     if freq <= minFreq + margin:
-#         return 0.0
-#     elif quantize:
-#         binIndex = sampleRate / (2 ** 16)
-#         return (round((freq / (binIndex))) * binIndex) / nyquist
-#     else:
-#         return freq / nyquist
-
-
 def linear_freq_scalar_to_log(linearValue):
     linearValue = max(linearValue, 0.0)
     return (logScale * np.log2(linearValue * nyquistBin)) if linearValue else 0
@@ -103,7 +60,9 @@ def linear_freq_scalar_to_log(linearValue):
 def log_freq_scalar_to_linear(logValue, quantize=False):
     binIndex = np.power(2.0, (logValue * octaveRange))
     binIndex = round(binIndex) if quantize else binIndex
-    return (binIndex / nyquistBin) if binIndex >= 1 else 0
+    if (binIndex < 1) or (logValue <= 0.0):
+        return 0
+    return (binIndex / nyquistBin)
 
 
 def get_frequency_from_linear_scalar(linearValue, sampleRate):
@@ -123,9 +82,80 @@ def get_frequency_from_log_scalar(logValue, sampleRate, quantize=False):
     '''
     binIndex = np.power(2.0, (logValue * octaveRange))
     binIndex = round(binIndex) if quantize else binIndex
-    if (binIndex < 1):
+    if (binIndex < 1) or (logValue <= 0.0):
         return 0
     return binIndex * (sampleRate / fftSize)
+
+
+def get_lin_scalar_from_frequency(frequency, sampleRate):
+    return np.float64(frequency) / (sampleRate * 0.5)
+
+
+def get_log_scalar_from_frequency(frequency, sampleRate):
+    return np.log2((frequency / (sampleRate / fftSize))) / octaveRange
+
+
+
+
+def extract_frame_frequencies_from_spc(spc_frame, sampleRate=44100):
+    """
+    Extract frequencies in Hz from an SPC frame.
+    
+    Each 24-bit spectrum value encodes frequency information in bytes 1-2.
+    
+    Args:
+        spc_frame: array-like of 128 spectrum values (24-bit floats in range [-1, 1])
+        sampleRate: sample rate in Hz (default 44100)
+    
+    Returns:
+        frequencies: array of 128 frequency values in Hz
+    """
+    # fftSize = 65536.0
+    # nyquistBin = 32768.0
+    # octaveRange = 15.0
+    
+    spc_frame = np.asarray(spc_frame, dtype=np.float64)
+    
+    # Convert float representation to integer representation
+    spectrum_ints = np.int32(spc_frame * 8388608)
+    spectrum_ints = np.where(spectrum_ints < 0, spectrum_ints + 0x1000000, spectrum_ints)
+    spectrum_ints = spectrum_ints & 0xFFFFFF
+    
+    # Extract bytes 1-2 (frequency scalar)
+    byte12 = spectrum_ints & 0xFFFF
+    freq_scalars = byte12 / 65536.0
+    
+    # Convert log frequency scalar to linear bin index
+    bin_indices = np.power(2.0, freq_scalars * octaveRange)
+    linear_scalars = bin_indices / nyquistBin
+    
+    # Convert to Hz
+    frequencies = linear_scalars * (sampleRate * 0.5)
+    
+    return frequencies
+
+
+def extract_frame_amplitudes_from_spc(spc_frame):
+    """
+    Extract amplitudes from an SPC frame.
+    
+    The amplitude is encoded in the spectrum value using an exponential formula
+    fitted to SpectrumOnDisk export data.
+    
+    Args:
+        spc_frame: array-like of 128 spectrum values (24-bit floats)
+    
+    Returns:
+        amplitudes: array of 128 amplitude values (non-negative scalars)
+    """
+    spc_frame = np.asarray(spc_frame, dtype=np.float64)
+    
+    # Exponential formula: amplitude = 0.00002691 * exp(10.50186 * spectrum)
+    amplitudes = 0.00002691 * np.exp(10.50186 * spc_frame)
+    
+    return amplitudes
+
+
 
 
 def get_spectral_data_from_st_file(filename):
@@ -146,5 +176,4 @@ def read_file_in_spectral_frames(filename, numPartials):
 
 def increment_partial_index(partialIndex, numPartials):
     return (partialIndex + 1) % numPartials
-
 

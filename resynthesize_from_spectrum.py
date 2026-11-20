@@ -3,13 +3,15 @@
 from sum_of_sines import *
 from conversions import *
 
-directory = './example_data/Kyma Dx Demo'
-inFileBasenameAmps = 'Kyma_dx_demo_001_LogSpect_48000_24_s128_71040_frames_amps'
-inFileBasenameFreqs = 'Kyma_dx_demo_001_LogSpect_48000_24_s128_71040_frames_freqs'
+directory = './example_data/byte_clear'
+baseFilename = 'carla_iam_original'
+
+inFileAmps = f'{baseFilename}_amp'
+inFileFreqs = f'{baseFilename}_freq'
 inFileExtension = 'aif'
-inFilenameAmps = f'{directory}/{inFileBasenameAmps}.{inFileExtension}'
-inFilenameFreqs = f'{directory}/{inFileBasenameFreqs}.{inFileExtension}'
-outFilename = f'{directory}/Kyma_dx_demo_001_LogSpect_48000_24_s128_71040_frames_resynthesis.{inFileExtension}'
+inFilenameAmps = f'{directory}/{inFileAmps}.{inFileExtension}'
+inFilenameFreqs = f'{directory}/{inFileFreqs}.{inFileExtension}'
+outFilename = f'{directory}/{baseFilename}_resynthesis.{inFileExtension}'
 
 # Set to True if spectrum file is log, False for linear spectrum
 logSpectrum = True
@@ -21,6 +23,7 @@ logScale = 1.0
 linearScale = 1.0
 
 # Number of partials must match the input spectrum
+# numPartials must equal the spectral frame duration in samples
 numPartials = 128
 
 # Whether to quantize oscillator frequency to nearest frequency bin
@@ -28,10 +31,10 @@ numPartials = 128
 quantize = False
 
 # Input data sample rate, as determined by how the spectrum was captured
-inputSampleRate = 48000
+inputSampleRate = 44100
 
 # Output sample rate to resynthesize
-outputSampleRate = 48000
+outputSampleRate = 44100
 
 print('Resynthesizing...')
 

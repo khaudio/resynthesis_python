@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 from oscillator import *
-from illustrate_float_waveform import *
-from multiprocessing import Queue
-import threading
 
 class OscillatorBank:
     def __init__(self, sampleRate, numOscillators, allowDC=False):
@@ -24,10 +21,3 @@ class OscillatorBank:
 
     def get_osc_sum(self, numSamples):
         return np.sum([oscillator(numSamples) for oscillator in self.oscillators], axis=0)
-
-class MultithreadedOscillatorBank(OscillatorBank):
-    def __init__(self, sampleRate, numOscillators, numThreads):
-        super().__init__(sampleRate, numOscillators)
-        self.threads = []
-        self.freqQueues = []
-        self.ampQueues = []
